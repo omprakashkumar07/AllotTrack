@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  totalFunds   Int?
+  createdAt    DateTime @default(now())
+}
+
+model Applicant {
+  id            String   @id @default(uuid())
+  name          String
+  panEncrypted  String   // AES-256 encrypted, show only last 4 chars on UI
+  mobileNumber  String
+  createdAt     DateTime @default(now())
+  applications  Application[]
+  transactions  FundTransaction[]
+}
+
+model Ipo {
+  id             String   @id @default(uuid())
+  name           String
+  category       String   // "mainboard" | "sme"
+  openDate       DateTime?
+  closeDate      DateTime?
+  allotmentDate  DateTime?
+  listingDate    DateTime?
+  priceBand      String?
+  lotSize        Int?
+  lotValue       Int?     // e.g. 15000 - used for amount validation
+  dataSource     String   // "gemini-grounded" | "manual"
+  lastVerifiedAt DateTime?
+  createdAt      DateTime @default(now())
+  applications   Application[]
+}
+
+model Application {
+  id                 String   @id @default(uuid())
+  ipoId              String
+  applicantId        String
+  applied            Boolean  @default(true)
+  amountSent         Int
+  sourceOfFunds      String
+  amountReceivedBack Int?   // filled after refund/allotment
+  allotmentStatus    String   @default("pending") // pending | allotted | not_allotted
+  sharesAllotted     Int?
+  notes              String?
+  amountTransferred  Int?
+  receivedFromApplicant Boolean @default(false)
+  amountReceivedFromApplicant Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  ipo                Ipo       @relation(fields: [ipoId], references: [id])
+  applicant          Applicant @relation(fields: [applicantId], references: [id])
+  fundTransactions   FundTransaction[]
+}
+
+model FundTransaction {
+  id            String   @id @default(uuid())
+  applicantId   String
+  type          String   // "sent" | "received"
+  amount        Int
+  date          DateTime @default(now())
+  notes         String?
+  applicant     Applicant @relation(fields: [applicantId], references: [id])
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model CapitalTransaction {
+  id        String   @id @default(uuid())
+  type      String   // "add" | "withdraw"
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+}
+
+model PersonalWithdrawal {
+  id        String   @id @default(uuid())
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+}
+
