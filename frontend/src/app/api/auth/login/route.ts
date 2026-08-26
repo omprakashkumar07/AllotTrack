@@ -5,8 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Call the Express backend
-    const res = await fetch('http://localhost:3001/api/login', {
+    const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001/api';
+    const res = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
