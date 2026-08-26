@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, FundTransaction, Applicant } from '@prisma/client';
 import { decrypt, maskPan } from '../utils/crypto';
 
 const router = Router();
@@ -14,7 +14,7 @@ router.get('/', async (req: Request, res: Response) => {
       },
       orderBy: { date: 'desc' }
     });
-    const mapped = transactions.map(tx => {
+    const mapped = transactions.map((tx: FundTransaction & { applicant: Applicant | null }) => {
       if (tx.applicant) {
         tx.applicant.panEncrypted = maskPan(decrypt(tx.applicant.panEncrypted));
       }

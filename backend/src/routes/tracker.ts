@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Ipo, Application, Applicant } from '@prisma/client';
 import { decrypt, maskPan } from '../utils/crypto';
 
 const router = Router();
@@ -18,8 +18,8 @@ router.get('/', async (req: Request, res: Response) => {
       orderBy: { openDate: 'desc' }
     });
 
-    const mapped = iposWithApplications.map(ipo => {
-      ipo.applications.forEach(app => {
+    const mapped = iposWithApplications.map((ipo: Ipo & { applications: (Application & { applicant: Applicant | null })[] }) => {
+      ipo.applications.forEach((app: Application & { applicant: Applicant | null }) => {
         if (app.applicant) {
           app.applicant.panEncrypted = maskPan(decrypt(app.applicant.panEncrypted));
         }

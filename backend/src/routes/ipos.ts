@@ -93,7 +93,7 @@ router.post('/fetch-live', async (req: Request, res: Response) => {
     }
 
     res.json({ success: true, count: results.length, ipos: results });
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching live IPOs:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }

@@ -29,7 +29,7 @@ router.get('/', async (req: Request, res: Response) => {
       return app;
     });
     res.json(mapped);
-  } catch (_error: unknown) {
+  } catch (error: unknown) {
     console.error('Error fetching applications:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
@@ -85,7 +85,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     res.status(201).json(application);
-  } catch (_error: unknown) {
+  } catch (error: unknown) {
     console.error('Error creating application:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
@@ -170,7 +170,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     res.json(application);
-  } catch (_error: unknown) {
+  } catch (error: unknown) {
     console.error('Error updating application:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
@@ -183,7 +183,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       where: { id: req.params.id }
     });
     res.json({ success: true });
-  } catch (_error: unknown) {
+  } catch (error: unknown) {
     console.error('Error deleting application:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
