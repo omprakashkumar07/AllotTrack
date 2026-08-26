@@ -25,6 +25,12 @@ interface AppRecord {
   createdAt: string;
   ipoName: string;
   applicant: { name: string };
+  amountSent: number;
+  amountTransferred: number | null;
+  receivedFromApplicant: boolean;
+  amountReceivedFromApplicant: number | null;
+  applied?: boolean;
+  allotmentStatus?: string;
 }
 
 interface FundTxRecord {
