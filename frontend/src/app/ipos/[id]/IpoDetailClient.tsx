@@ -428,8 +428,6 @@ export default function IpoDetailClient({ initialIpo }: { initialIpo: IpoData })
   const selectedApplicant = applicants.find(a => a.id === selectedApplicantId);
   const filteredApplicants = applicants.filter(a => a.name.toLowerCase().includes(appSearchTerm.toLowerCase()));
 
-  const isAllotmentPassed = Boolean(ipo.allotmentDate && new Date() >= new Date(ipo.allotmentDate));
-
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-12 flex flex-col">
       <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
