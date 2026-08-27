@@ -72,3 +72,15 @@ export async function fetchLiveIpos() {
     method: 'POST',
   });
 }
+
+export async function fetchExternalIposList() {
+  return fetchWithAuth('/ipos/fetch-external/list', {
+    method: 'GET',
+  });
+}
+
+export async function fetchExternalIpoDetail(url: string) {
+  return fetchWithAuth(`/ipos/fetch-external/detail?url=${encodeURIComponent(url)}`, {
+    method: 'GET',
+  });
+}
