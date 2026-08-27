@@ -320,7 +320,8 @@ export default function IpoDetailClient({ initialIpo }: { initialIpo: IpoData })
   const [selectedApplicantId, setSelectedApplicantId] = useState('');
   const [amountSent, setAmountSent] = useState<string>('');
   const [amountTransferred, setAmountTransferred] = useState<string>('');
-  const [sourceOfFunds, setSourceOfFunds] = useState('');
+  const [sourceOfFundsType, setSourceOfFundsType] = useState('Navi Loan');
+  const [customSourceOfFunds, setCustomSourceOfFunds] = useState('');
   const [appliedStatus, setAppliedStatus] = useState(true);
 
   const fetchApplications = useCallback(() => {
@@ -385,12 +386,13 @@ export default function IpoDetailClient({ initialIpo }: { initialIpo: IpoData })
 
     setAppFormLoading(true);
     try {
+      const finalSourceOfFunds = sourceOfFundsType === 'Other' ? customSourceOfFunds : sourceOfFundsType;
       await createApplication({
         ipoId: ipo.id,
         applicantId: selectedApplicantId,
         amountSent: amount,
         amountTransferred: amountTransferred ? parseInt(amountTransferred, 10) : null,
-        sourceOfFunds,
+        sourceOfFunds: finalSourceOfFunds,
         applied: appliedStatus
       });
       fetchApplications();
@@ -399,7 +401,8 @@ export default function IpoDetailClient({ initialIpo }: { initialIpo: IpoData })
       setSelectedApplicantId('');
       setAmountSent('');
       setAmountTransferred('');
-      setSourceOfFunds('');
+      setSourceOfFundsType('Navi Loan');
+      setCustomSourceOfFunds('');
       setAppliedStatus(true);
       setAppSearchTerm('');
     } catch (err: unknown) {
@@ -489,7 +492,13 @@ export default function IpoDetailClient({ initialIpo }: { initialIpo: IpoData })
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-gray-900">Applications</h3>
             {!showAppForm && (
-              <button onClick={() => setShowAppForm(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">
+              <button onClick={() => {
+                setShowAppForm(true);
+                setAmountSent(ipo.lotValue ? String(ipo.lotValue) : '');
+                setAmountTransferred('15000');
+                setSourceOfFundsType('Navi Loan');
+                setCustomSourceOfFunds('');
+              }} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">
                 <Plus size={16} /> Add Application
               </button>
             )}
@@ -561,7 +570,16 @@ export default function IpoDetailClient({ initialIpo }: { initialIpo: IpoData })
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Source of Funds</label>
-                    <input type="text" required value={sourceOfFunds} onChange={(e) => setSourceOfFunds(e.target.value)} className="w-full px-4 py-2 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="e.g. HDFC Bank Acct" />
+                    <div className="flex flex-col gap-2">
+                      <select value={sourceOfFundsType} onChange={(e) => setSourceOfFundsType(e.target.value)} className="w-full px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <option value="Navi Loan">Navi Loan</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Other">Other</option>
+                      </select>
+                      {sourceOfFundsType === 'Other' && (
+                        <input type="text" required value={customSourceOfFunds} onChange={(e) => setCustomSourceOfFunds(e.target.value)} className="w-full px-4 py-2 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="e.g. HDFC Bank Acct" />
+                      )}
+                    </div>
                   </div>
                 </div>
 

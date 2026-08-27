@@ -16,6 +16,18 @@ export default function IpoNewClient() {
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [externalIpos, setExternalIpos] = useState<{ name: string; priceBand: string; detailUrl: string }[]>([]);
   const [externalError, setExternalError] = useState('');
+  const [expandedIpoIdx, setExpandedIpoIdx] = useState<number | null>(null);
+  interface ExpandedIpoDetails {
+    lotSize: number | null;
+    openDate: string | null;
+    closeDate: string | null;
+    allotmentDate: string | null;
+    listingDate: string | null;
+    calculatedLotValue: string;
+    gmp?: number | null;
+    gmpPercentage?: string | null;
+  }
+  const [expandedIpoDetails, setExpandedIpoDetails] = useState<ExpandedIpoDetails | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -32,6 +44,8 @@ export default function IpoNewClient() {
   const handleFetchExternalList = async () => {
     setIsLoadingExternal(true);
     setExternalError('');
+    setExpandedIpoIdx(null);
+    setExpandedIpoDetails(null);
     setShowExternalModal(true);
     try {
       const data = await fetchExternalIposList();
@@ -47,35 +61,37 @@ export default function IpoNewClient() {
     }
   };
 
-  const handleSelectExternalIpo = async (ipo: { name: string; priceBand: string; detailUrl: string }) => {
+  const handleSelectExternalIpo = async (ipo: { name: string; priceBand: string; detailUrl: string }, idx: number) => {
+    if (expandedIpoIdx === idx) {
+      setExpandedIpoIdx(null);
+      return;
+    }
+    setExpandedIpoIdx(idx);
     setIsFetchingDetails(true);
     setExternalError('');
+    setExpandedIpoDetails(null);
     try {
       const data = await fetchExternalIpoDetail(ipo.detailUrl);
       if (data.success) {
         const details = data.details;
         
         let calculatedLotValue = '';
+        let gmpPercentage = null;
         if (details.lotSize && ipo.priceBand) {
           const matches = ipo.priceBand.match(/\d+(\.\d+)?/g);
           if (matches && matches.length > 0) {
             const maxPrice = Math.max(...matches.map(m => parseFloat(m)));
             calculatedLotValue = String(Math.round(details.lotSize * maxPrice));
+            if (details.gmp !== undefined && details.gmp !== null) {
+              gmpPercentage = ((details.gmp / maxPrice) * 100).toFixed(2);
+            }
           }
         }
-
-        setFormData({
-          ...formData,
-          name: ipo.name || '',
-          priceBand: ipo.priceBand || '',
-          lotSize: details.lotSize ? String(details.lotSize) : '',
-          lotValue: calculatedLotValue,
-          openDate: details.openDate ? details.openDate.split('T')[0] : '',
-          closeDate: details.closeDate ? details.closeDate.split('T')[0] : '',
-          allotmentDate: details.allotmentDate ? details.allotmentDate.split('T')[0] : '',
-          listingDate: details.listingDate ? details.listingDate.split('T')[0] : '',
+        setExpandedIpoDetails({
+          ...details,
+          calculatedLotValue,
+          gmpPercentage
         });
-        setShowExternalModal(false);
       } else {
         setExternalError(data.error || 'Failed to fetch IPO details');
       }
@@ -84,6 +100,24 @@ export default function IpoNewClient() {
     } finally {
       setIsFetchingDetails(false);
     }
+  };
+
+  const handleConfirmIpo = (ipo: { name: string; priceBand: string; detailUrl: string }) => {
+    if (!expandedIpoDetails) return;
+    setFormData({
+      ...formData,
+      name: ipo.name || '',
+      priceBand: ipo.priceBand || '',
+      lotSize: expandedIpoDetails.lotSize ? String(expandedIpoDetails.lotSize) : '',
+      lotValue: expandedIpoDetails.calculatedLotValue,
+      openDate: expandedIpoDetails.openDate ? expandedIpoDetails.openDate.split('T')[0] : '',
+      closeDate: expandedIpoDetails.closeDate ? expandedIpoDetails.closeDate.split('T')[0] : '',
+      allotmentDate: expandedIpoDetails.allotmentDate ? expandedIpoDetails.allotmentDate.split('T')[0] : '',
+      listingDate: expandedIpoDetails.listingDate ? expandedIpoDetails.listingDate.split('T')[0] : '',
+    });
+    setShowExternalModal(false);
+    setExpandedIpoIdx(null);
+    setExpandedIpoDetails(null);
   };
 
   const handleSaveIpo = async (e: React.FormEvent) => {
@@ -234,27 +268,62 @@ export default function IpoNewClient() {
               ) : (
                 <div className="flex flex-col gap-3">
                   {externalIpos.map((ipo, idx) => (
-                    <button
+                    <div
                       key={idx}
-                      onClick={() => handleSelectExternalIpo(ipo)}
-                      disabled={isFetchingDetails}
-                      className="text-left bg-white border border-gray-200 p-4 rounded-lg hover:border-indigo-500 hover:shadow-md transition-all flex justify-between items-center group disabled:opacity-50"
+                      className="bg-white border border-gray-200 rounded-lg overflow-hidden transition-all"
                     >
-                      <div>
-                        <div className="font-bold text-gray-900 group-hover:text-indigo-700">{ipo.name}</div>
-                        <div className="text-sm text-gray-500 mt-1">{ipo.priceBand}</div>
-                      </div>
-                      {isFetchingDetails && <Loader2 className="animate-spin text-indigo-500" size={20} />}
-                    </button>
+                      <button
+                        onClick={() => handleSelectExternalIpo(ipo, idx)}
+                        disabled={isFetchingDetails && expandedIpoIdx !== idx}
+                        className="w-full text-left p-4 hover:bg-gray-50 flex justify-between items-center group disabled:opacity-50"
+                      >
+                        <div>
+                          <div className="font-bold text-gray-900 group-hover:text-indigo-700">{ipo.name}</div>
+                          <div className="text-sm text-gray-500 mt-1">{ipo.priceBand}</div>
+                        </div>
+                        {isFetchingDetails && expandedIpoIdx === idx && (
+                          <Loader2 className="animate-spin text-indigo-500" size={20} />
+                        )}
+                      </button>
+                      
+                      {expandedIpoIdx === idx && (
+                        <div className="p-4 border-t border-gray-100 bg-gray-50 text-sm">
+                          {isFetchingDetails ? (
+                            <div className="text-gray-500 italic flex items-center gap-2">
+                              <Loader2 className="animate-spin" size={16} /> loading details...
+                            </div>
+                          ) : expandedIpoDetails ? (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-2 text-gray-700">
+                                <div><span className="font-medium text-gray-900">Open:</span> {expandedIpoDetails.openDate ? new Date(expandedIpoDetails.openDate).toLocaleDateString() : 'N/A'}</div>
+                                <div><span className="font-medium text-gray-900">Close:</span> {expandedIpoDetails.closeDate ? new Date(expandedIpoDetails.closeDate).toLocaleDateString() : 'N/A'}</div>
+                                <div><span className="font-medium text-gray-900">Allotment:</span> {expandedIpoDetails.allotmentDate ? new Date(expandedIpoDetails.allotmentDate).toLocaleDateString() : 'N/A'}</div>
+                                <div><span className="font-medium text-gray-900">Listing:</span> {expandedIpoDetails.listingDate ? new Date(expandedIpoDetails.listingDate).toLocaleDateString() : 'N/A'}</div>
+                                <div><span className="font-medium text-gray-900">Price per Lot:</span> {expandedIpoDetails.calculatedLotValue ? `₹${expandedIpoDetails.calculatedLotValue}` : 'N/A'}</div>
+                                {expandedIpoDetails.gmp !== undefined && expandedIpoDetails.gmp !== null && (
+                                  <div><span className="font-medium text-gray-900">GMP:</span> ₹{expandedIpoDetails.gmp} ({expandedIpoDetails.gmpPercentage}%)</div>
+                                )}
+                              </div>
+                              <div className="pt-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleConfirmIpo(ipo)}
+                                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                                >
+                                  Use this IPO
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-red-500">Failed to load details.</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
             </div>
-            {isFetchingDetails && (
-              <div className="bg-indigo-50 text-indigo-700 p-3 text-center text-sm font-medium border-t border-indigo-100">
-                Fetching IPO details...
-              </div>
-            )}
           </div>
         </div>
       )}

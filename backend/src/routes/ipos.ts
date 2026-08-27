@@ -192,8 +192,25 @@ router.get('/fetch-external/detail', async (req: Request, res: Response) => {
     let closeDate: string | null = null;
     let allotmentDate: string | null = null;
     let listingDate: string | null = null;
+    let gmp: number | null = null;
     
     $('table').each((i, tab) => {
+      const firstRowCols = $(tab).find('tr').first().find('td, th');
+      let gmpColIdx = -1;
+      firstRowCols.each((k, col) => {
+        if ($(col).text().toLowerCase().includes('gmp')) {
+          gmpColIdx = k;
+        }
+      });
+      if (gmpColIdx !== -1 && gmp === null) {
+        const secondRow = $(tab).find('tr').eq(1);
+        if (secondRow.length > 0) {
+           const gmpText = secondRow.find('td, th').eq(gmpColIdx).text().trim().replace(/,/g, '');
+           const parsed = parseFloat(gmpText);
+           if (!isNaN(parsed)) gmp = parsed;
+        }
+      }
+
       $(tab).find('tr').each((j, row) => {
         const key = $(row).find('td').first().text().toLowerCase().trim();
         const value = $(row).find('td').eq(1).text().trim();
@@ -215,7 +232,7 @@ router.get('/fetch-external/detail', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      details: { lotSize, openDate, closeDate, allotmentDate, listingDate }
+      details: { lotSize, openDate, closeDate, allotmentDate, listingDate, gmp }
     });
   } catch (error) {
     console.error('Error fetching external IPO detail:', error);
