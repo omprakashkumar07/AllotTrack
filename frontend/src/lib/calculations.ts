@@ -21,12 +21,14 @@ export function calculateApplicationMetrics({ ipo, application }: CalculationPar
     
   const amountTransferred = application.amountTransferred ?? application.amountSent;
   
+  const ipoAmount = application.amountSent;
+
   const profit = application.receivedFromApplicant && application.amountReceivedFromApplicant !== null 
-    ? application.amountReceivedFromApplicant - amountTransferred 
+    ? (application.amountReceivedFromApplicant || 0) - ipoAmount 
     : null;
     
-  const profitPercent = profit !== null && amountTransferred > 0 
-    ? (profit / amountTransferred) * 100 
+  const profitPercent = profit !== null && ipoAmount > 0 
+    ? (profit / ipoAmount) * 100 
     : null;
 
   return {
@@ -64,11 +66,11 @@ export function calculateIpoAggregates(applications: IpoApplicationAggregatePara
 
     if (app.receivedFromApplicant) {
       anySettled = true;
-      const amountTransferred = app.amountTransferred ?? app.amountSent;
+      const ipoAmount = app.amountSent;
       const received = app.amountReceivedFromApplicant ?? 0;
       
-      totalProfit += (received - amountTransferred);
-      settledTransferred += amountTransferred;
+      totalProfit += (received - ipoAmount);
+      settledTransferred += ipoAmount;
     }
   }
 

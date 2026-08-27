@@ -51,13 +51,11 @@ interface ApplicationData {
 function ApplicationRow({ 
   app, 
   ipo,
-  isAllotmentPassed, 
   onDelete,
   onRefresh
 }: { 
   app: ApplicationData, 
   ipo: IpoData,
-  isAllotmentPassed: boolean,
   onDelete: (id: string) => void,
   onRefresh: () => void
 }) {
@@ -211,39 +209,37 @@ function ApplicationRow({
         </div>
       </td>
 
-      {isAllotmentPassed && (
-        <>
-          {isEditing ? (
-            <td colSpan={3} className="px-4 py-3">
-              <div className="flex gap-2 items-center">
-                <select className="border border-gray-300 bg-white text-gray-900 rounded px-2 py-1 text-sm w-24" value={status} onChange={e => handleStatusChange(e.target.value)}>
-                  <option value="pending">Pending</option>
-                  <option value="allotted">Allotted</option>
-                  <option value="not_allotted">Not Allotted</option>
-                </select>
-                <input type="number" placeholder="Shares" className="border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded px-2 py-1 w-16 text-sm" value={shares} onChange={e => setShares(e.target.value)} />
-                <input type="number" placeholder="Refund (₹)" className="border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded px-2 py-1 w-24 text-sm" value={refund} onChange={e => setRefund(e.target.value)} />
-                <button onClick={handleSave} disabled={loading} className="text-green-600 hover:text-green-800"><CheckCircle size={18} /></button>
-                <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
-              </div>
+      <>
+        {isEditing ? (
+          <td colSpan={3} className="px-4 py-3">
+            <div className="flex gap-2 items-center">
+              <select className="border border-gray-300 bg-white text-gray-900 rounded px-2 py-1 text-sm w-24" value={status} onChange={e => handleStatusChange(e.target.value)}>
+                <option value="pending">Pending</option>
+                <option value="allotted">Allotted</option>
+                <option value="not_allotted">Not Allotted</option>
+              </select>
+              <input type="number" placeholder="Shares" className="border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded px-2 py-1 w-16 text-sm" value={shares} onChange={e => setShares(e.target.value)} />
+              <input type="number" placeholder="Refund (₹)" className="border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded px-2 py-1 w-24 text-sm" value={refund} onChange={e => setRefund(e.target.value)} />
+              <button onClick={handleSave} disabled={loading} className="text-green-600 hover:text-green-800"><CheckCircle size={18} /></button>
+              <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+          </td>
+        ) : (
+          <>
+            <td className="px-4 py-3 whitespace-nowrap text-sm">
+              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${app.allotmentStatus === 'allotted' ? 'bg-green-100 text-green-800' : app.allotmentStatus === 'not_allotted' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                {app.allotmentStatus === 'allotted' ? 'Allotted' : app.allotmentStatus === 'not_allotted' ? 'Not Allotted' : 'Pending'}
+              </span>
             </td>
-          ) : (
-            <>
-              <td className="px-4 py-3 whitespace-nowrap text-sm">
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${app.allotmentStatus === 'allotted' ? 'bg-green-100 text-green-800' : app.allotmentStatus === 'not_allotted' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                  {app.allotmentStatus === 'allotted' ? 'Allotted' : app.allotmentStatus === 'not_allotted' ? 'Not Allotted' : 'Pending'}
-                </span>
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
-                {app.sharesAllotted || '-'}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
-                {app.amountReceivedBack !== null && app.amountReceivedBack !== undefined ? `₹${formatCurrency(app.amountReceivedBack)}` : '-'}
-              </td>
-            </>
-          )}
-        </>
-      )}
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
+              {app.sharesAllotted || '-'}
+            </td>
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
+              {app.amountReceivedBack !== null && app.amountReceivedBack !== undefined ? `₹${formatCurrency(app.amountReceivedBack)}` : '-'}
+            </td>
+          </>
+        )}
+      </>
 
       <td className="px-4 py-3 whitespace-nowrap text-sm">
         {profit !== null ? (
@@ -257,7 +253,7 @@ function ApplicationRow({
       </td>
 
       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-        {isAllotmentPassed && !isEditing && (
+        {!isEditing && (
           <button onClick={() => setIsEditing(true)} className="text-blue-600 hover:text-blue-900 transition-colors mr-3">
             <Edit2 size={16} className="inline" />
           </button>
@@ -269,7 +265,7 @@ function ApplicationRow({
     </tr>
     {isExpanded && (
       <tr className="bg-gray-50 border-b border-gray-200">
-        <td colSpan={isAllotmentPassed ? 11 : 8} className="p-0">
+        <td colSpan={11} className="p-0">
           <div className="px-14 py-4 flex gap-12 text-sm">
             <div>
               <span className="text-gray-500 font-medium mr-2">PAN:</span>
@@ -591,13 +587,9 @@ export default function IpoDetailClient({ initialIpo }: { initialIpo: IpoData })
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Lots Applied</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Settled</th>
                   
-                  {isAllotmentPassed && (
-                    <>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Allotment</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Shares</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Refund</th>
-                    </>
-                  )}
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Allotment</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Shares</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Refund</th>
                   
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Profit</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
@@ -609,14 +601,13 @@ export default function IpoDetailClient({ initialIpo }: { initialIpo: IpoData })
                     key={app.id} 
                     app={app}
                     ipo={ipo}
-                    isAllotmentPassed={isAllotmentPassed} 
                     onDelete={handleDeleteApplication}
                     onRefresh={fetchApplications}
                   />
                 ))}
                 {applications.length === 0 && (
                   <tr>
-                    <td colSpan={isAllotmentPassed ? 11 : 8} className="px-6 py-8 text-center text-gray-500 text-sm">
+                    <td colSpan={11} className="px-6 py-8 text-center text-gray-500 text-sm">
                       No applications added yet.
                     </td>
                   </tr>
