@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Download, Eye, EyeOff } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, Eye, EyeOff, Copy, Check, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { formatDate } from '@/lib/formatDate';
 import { calculateApplicationMetrics, calculateIpoAggregates } from '@/lib/calculations';
@@ -43,6 +43,24 @@ interface IpoTrackerData {
 
 function PanRevealCell({ applicantId, encryptedPan }: { applicantId: string, encryptedPan: string }) {
   const [revealedPan, setRevealedPan] = useState<string | null>(null);
+  const [isCopying, setIsCopying] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  
+  const handleCopyPan = async () => {
+    if (isCopying) return;
+    setIsCopying(true);
+    setCopySuccess(false);
+    try {
+      const fullData = await getApplicant(applicantId, true);
+      await navigator.clipboard.writeText(fullData.panEncrypted);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy PAN', err);
+    } finally {
+      setIsCopying(false);
+    }
+  };
   
   const handleRevealToggle = async () => {
     if (revealedPan) {
@@ -66,6 +84,14 @@ function PanRevealCell({ applicantId, encryptedPan }: { applicantId: string, enc
         title={revealedPan ? "Hide PAN" : "Reveal PAN"}
       >
         {revealedPan ? <EyeOff size={14} className="inline" /> : <Eye size={14} className="inline" />}
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); handleCopyPan(); }}
+        disabled={isCopying}
+        className="ml-2 text-gray-400 hover:text-green-600 transition-colors focus:outline-none disabled:opacity-50"
+        title="Copy full PAN"
+      >
+        {isCopying ? <Loader2 size={14} className="inline animate-spin" /> : copySuccess ? <Check size={14} className="inline text-green-600" /> : <Copy size={14} className="inline" />}
       </button>
     </span>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, Edit, Trash2, Plus, X } from 'lucide-react';
+import { Eye, EyeOff, Edit, Trash2, Plus, X, Copy, Check, Loader2 } from 'lucide-react';
 import { createApplicant, updateApplicant, deleteApplicant, getApplicant, getApplicants } from '../actions/applicantActions';
 
 interface ApplicantData {
@@ -14,6 +14,8 @@ interface ApplicantData {
 export default function ApplicantClient({ initialApplicants }: { initialApplicants: ApplicantData[] }) {
   const [applicants, setApplicants] = useState(initialApplicants);
   const [revealedPans, setRevealedPans] = useState<Record<string, string>>({});
+  const [copyingIds, setCopyingIds] = useState<Record<string, boolean>>({});
+  const [copiedIds, setCopiedIds] = useState<Record<string, boolean>>({});
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,6 +33,22 @@ export default function ApplicantClient({ initialApplicants }: { initialApplican
       setApplicants(data);
     } catch (err) {
       console.error('Failed to refresh list', err);
+    }
+  };
+
+  const handleCopyPan = async (id: string) => {
+    if (copyingIds[id]) return;
+    setCopyingIds(prev => ({ ...prev, [id]: true }));
+    setCopiedIds(prev => ({ ...prev, [id]: false }));
+    try {
+      const fullData = await getApplicant(id, true);
+      await navigator.clipboard.writeText(fullData.panEncrypted);
+      setCopiedIds(prev => ({ ...prev, [id]: true }));
+      setTimeout(() => setCopiedIds(prev => ({ ...prev, [id]: false })), 2000);
+    } catch (err) {
+      console.error('Failed to copy PAN', err);
+    } finally {
+      setCopyingIds(prev => ({ ...prev, [id]: false }));
     }
   };
 
@@ -150,6 +168,14 @@ export default function ApplicantClient({ initialApplicants }: { initialApplican
                     title={revealedPans[app.id] ? "Hide PAN" : "Reveal PAN"}
                   >
                     {revealedPans[app.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                  <button
+                    onClick={() => handleCopyPan(app.id)}
+                    disabled={copyingIds[app.id]}
+                    className="text-gray-400 hover:text-green-600 transition-colors focus:outline-none disabled:opacity-50"
+                    title="Copy full PAN"
+                  >
+                    {copyingIds[app.id] ? <Loader2 size={16} className="animate-spin" /> : copiedIds[app.id] ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
                   </button>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{app.mobileNumber}</td>

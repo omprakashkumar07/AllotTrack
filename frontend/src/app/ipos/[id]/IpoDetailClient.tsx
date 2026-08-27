@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Edit2, Save, X, Plus, Trash2, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Edit2, Save, X, Plus, Trash2, CheckCircle, Eye, EyeOff, Copy, Check, Loader2 } from 'lucide-react';
 import { updateIpo } from '../../actions/ipoActions';
 import { getApplicants, getApplicant } from '../../actions/applicantActions';
 import { getApplications, createApplication, deleteApplication, updateApplication } from '../../actions/applicationActions';
@@ -67,6 +67,24 @@ function ApplicationRow({
   const [loading, setLoading] = useState(false);
   const [toggleLoading, setToggleLoading] = useState(false);
   const [revealedPan, setRevealedPan] = useState<string | null>(null);
+  const [isCopying, setIsCopying] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const handleCopyPan = async () => {
+    if (isCopying) return;
+    setIsCopying(true);
+    setCopySuccess(false);
+    try {
+      const fullData = await getApplicant(app.applicant.id, true);
+      await navigator.clipboard.writeText(fullData.panEncrypted);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy PAN', err);
+    } finally {
+      setIsCopying(false);
+    }
+  };
 
   const handleRevealToggle = async () => {
     if (revealedPan) {
@@ -277,6 +295,14 @@ function ApplicationRow({
                   title={revealedPan ? "Hide PAN" : "Reveal PAN"}
                 >
                   {revealedPan ? <EyeOff size={14} className="inline" /> : <Eye size={14} className="inline" />}
+                </button>
+                <button
+                  onClick={handleCopyPan}
+                  disabled={isCopying}
+                  className="ml-2 text-gray-400 hover:text-green-600 transition-colors focus:outline-none disabled:opacity-50"
+                  title="Copy full PAN"
+                >
+                  {isCopying ? <Loader2 size={14} className="inline animate-spin" /> : copySuccess ? <Check size={14} className="inline text-green-600" /> : <Copy size={14} className="inline" />}
                 </button>
               </span>
             </div>
